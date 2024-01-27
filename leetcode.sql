@@ -1368,3 +1368,298 @@ WHERE NOT EXISTS (
     WHERE o.sales_id = sp.sales_id AND c.name = 'RED'
 );
 ------------------------------------------------------------------
+
+--586. Клиент, размещающий наибольшее количество заказов
+https://leetcode.com/problems/customer-placing-the-largest-number-of-orders/description/
+
+/*
+Напишите решение, чтобы найти номер клиента для клиента, который разместил наибольшее количество заказов.
+
+Тестовые примеры генерируются таким образом, что ровно один клиент разместит больше заказов, чем любой другой клиент.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Orders table:
++--------------+-----------------+
+| order_number | customer_number |
++--------------+-----------------+
+| 1            | 1               |
+| 2            | 2               |
+| 3            | 3               |
+| 4            | 3               |
++--------------+-----------------+
+Output: 
++-----------------+
+| customer_number |
++-----------------+
+| 3               |
++-----------------+
+Объяснение: У клиента с номером 3 есть два заказа, что больше, чем у клиента 1 или 2, потому что у каждого из них только один заказ. Таким образом, результат - клиент_номер 3.
+*/
+
+SELECT
+    customer_number
+FROM Orders
+GROUP BY customer_number
+ORDER BY COUNT(*) DESC
+LIMIT 1;
+-----------------------------------------
+
+--1789. Первичное отделение для каждого сотрудника
+https://leetcode.com/problems/primary-department-for-each-employee/submissions/1158385224/
+
+/*
+
+Primary_flag - это ENUM (категория) типа ('Y', 'N'). Если флаг "Y", отдел является основным отделом для сотрудника. Если флаг "N", отдел не является основным.
+
+Сотрудники могут принадлежать к нескольким отделам. Когда сотрудник присоединяется к другим отделам, ему нужно решить, какой отдел является его основным отделом. Обратите внимание, что когда сотрудник принадлежит только одному отделу, его основной колонкой является "N".
+
+Напишите решение, чтобы сообщить обо всех сотрудниках в их основном отделе. Для сотрудников, принадлежащих к одному отделу, сообщите об их единственном отделе.
+
+Верните таблицу результатов в любом порядке.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Employee table:
++-------------+---------------+--------------+
+| employee_id | department_id | primary_flag |
++-------------+---------------+--------------+
+| 1           | 1             | N            |
+| 2           | 1             | Y            |
+| 2           | 2             | N            |
+| 3           | 3             | N            |
+| 4           | 2             | N            |
+| 4           | 3             | Y            |
+| 4           | 4             | N            |
++-------------+---------------+--------------+
+Output: 
++-------------+---------------+
+| employee_id | department_id |
++-------------+---------------+
+| 1           | 1             |
+| 2           | 1             |
+| 3           | 3             |
+| 4           | 3             |
++-------------+---------------+
+Explanation: 
+*/
+
+WITH PrimaryDepartments AS (
+    SELECT 
+        employee_id, 
+        CASE 
+            WHEN COUNT(DISTINCT department_id) = 1 THEN MIN(department_id) 
+            ELSE MAX(CASE WHEN primary_flag = 'Y' THEN department_id ELSE NULL END) 
+        END AS primary_department
+    FROM 
+        Employee
+    GROUP BY 
+        employee_id
+)
+SELECT 
+    employee_id, 
+    primary_department AS department_id
+FROM 
+    PrimaryDepartments
+WHERE 
+    primary_department IS NOT NULL;
+---------------------------------------------------------------------------
+
+--1075. Сотрудники проекта I
+https://leetcode.com/problems/project-employees-i/submissions/1158398923/
+
+/*
+Напишите SQL-запрос, в котором сообщается о среднем опыте всех сотрудников для каждого проекта, округленный до 2 цифр.
+
+Верните таблицу результатов в любом порядке.
+
+Формат результата запроса приведен в следующем примере.
+
+Input: 
+Project table:
++-------------+-------------+
+| project_id  | employee_id |
++-------------+-------------+
+| 1           | 1           |
+| 1           | 2           |
+| 1           | 3           |
+| 2           | 1           |
+| 2           | 4           |
++-------------+-------------+
+Employee table:
++-------------+--------+------------------+
+| employee_id | name   | experience_years |
++-------------+--------+------------------+
+| 1           | Khaled | 3                |
+| 2           | Ali    | 2                |
+| 3           | John   | 1                |
+| 4           | Doe    | 2                |
++-------------+--------+------------------+
+Output: 
++-------------+---------------+
+| project_id  | average_years |
++-------------+---------------+
+| 1           | 2.00          |
+| 2           | 2.50          |
++-------------+---------------+
+Explanation: The average experie
+*/
+
+SELECT
+    DISTINCT(project_id),
+    ROUND(AVG(experience_years) OVER (PARTITION BY project_id), 2) AS average_years
+FROM Project
+LEFT JOIN Employee
+USING(employee_id);
+-------------------------------------------------------
+
+--1667. Исправить имена в таблице
+https://leetcode.com/problems/fix-names-in-a-table/
+
+/*
+Напишите решение, чтобы исправить имена так, чтобы только первый символ был в верхнем регистре, а остальные - в нижнем регистре.
+
+Возвращает таблицу результатов, упорядоченную по user_id.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Users table:
++---------+-------+
+| user_id | name  |
++---------+-------+
+| 1       | aLice |
+| 2       | bOB   |
++---------+-------+
+Output: 
++---------+-------+
+| user_id | name  |
++---------+-------+
+| 1       | Alice |
+| 2       | Bob   |
++---------+-------+
+*/
+
+SELECT 
+    user_id, 
+    CONCAT(UPPER(SUBSTRING(name, 1, 1)), LOWER(SUBSTRING(name, 2))) AS name
+FROM Users
+ORDER BY user_id;
+-------------------------------------------
+
+--196. Удалить повторяющиеся электронные письма
+https://translate.google.nl/?hl=ru&sl=auto&tl=ru&text=196.%20Delete%20Duplicate%20Emails&op=translate
+
+/*
+PostgreSQL
+
+Напишите решение для удаления всех дубликатов электронных писем, сохранив только одно уникальное электронное письмо с наименьшим идентификатором.
+
+Для пользователей SQL, пожалуйста, обратите внимание, что вы должны написать инструкцию DELETE, а не SELECT.
+
+После запуска вашего сценария показанный ответ - таблица "Человек". Драйвер сначала скомпилирует и запустите ваш фрагмент кода, а затем покажет таблицу Person. Окончательный порядок стола Person не имеет значения.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Person table:
++----+------------------+
+| id | email            |
++----+------------------+
+| 1  | john@example.com |
+| 2  | bob@example.com  |
+| 3  | john@example.com |
++----+------------------+
+Output: 
++----+------------------+
+| id | email            |
++----+------------------+
+| 1  | john@example.com |
+| 2  | bob@example.com  |
++----+------------------+
+*/
+
+DELETE FROM Person
+WHERE id NOT IN (
+    SELECT MIN(id)
+    FROM Person
+    GROUP BY email
+);
+-------------------------------------------------
+
+--619. Самое большое одиночное число.
+https://leetcode.com/problems/biggest-single-number/submissions/1158420634/
+
+/*
+Одно число - это число, которое появилось только один раз в таблице MyNumbers.
+
+Найдите самое большое одно число. Если нет единого номера, сообщите null.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+MyNumbers table:
++-----+
+| num |
++-----+
+| 8   |
+| 8   |
+| 3   |
+| 3   |
+| 1   |
+| 4   |
+| 5   |
+| 6   |
++-----+
+Output: 
++-----+
+| num |
++-----+
+| 6   |
++-----+
+Explanation: The single numbers are 1, 4, 5, and 6.
+Since 6 is the largest single number, we return it.
+Example 2:
+
+Input: 
+MyNumbers table:
++-----+
+| num |
++-----+
+| 8   |
+| 8   |
+| 7   |
+| 7   |
+| 3   |
+| 3   |
+| 3   |
++-----+
+Output: 
++------+
+| num  |
++------+
+| null |
++------+
+Explanation: There are no single numbers in the input table so we return null.
+*/
+
+SELECT MAX(num) AS num
+FROM (
+    SELECT num
+    FROM MyNumbers
+    GROUP BY num
+    HAVING COUNT(num) = 1
+) AS SingleNumbers;
+
+----------------
+WITH SingleNumbers AS (
+    SELECT num
+    FROM MyNumbers
+    GROUP BY num
+    HAVING COUNT(num) = 1
+)
+SELECT MAX(num) AS num
+FROM SingleNumbers;
+----------------------------------------------------------------------
