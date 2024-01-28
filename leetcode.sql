@@ -1663,3 +1663,386 @@ WITH SingleNumbers AS (
 SELECT MAX(num) AS num
 FROM SingleNumbers;
 ----------------------------------------------------------------------
+
+--1407. Лучшие путешественники
+https://leetcode.com/problems/top-travellers/submissions/1159345044/
+
+/*
+Напишите решение, чтобы сообщить о расстоянии, пройденном каждым пользователем.
+
+Верните таблицу результатов, упорядоченную по distance traveled_distance в порядке убывания, если два или более пользователей преодолели одинаковое расстояние, упорядочьте их по имени в порядке возрастания.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Users table:
++------+-----------+
+| id   | name      |
++------+-----------+
+| 1    | Alice     |
+| 2    | Bob       |
+| 3    | Alex      |
+| 4    | Donald    |
+| 7    | Lee       |
+| 13   | Jonathan  |
+| 19   | Elvis     |
++------+-----------+
+Rides table:
++------+----------+----------+
+| id   | user_id  | distance |
++------+----------+----------+
+| 1    | 1        | 120      |
+| 2    | 2        | 317      |
+| 3    | 3        | 222      |
+| 4    | 7        | 100      |
+| 5    | 13       | 312      |
+| 6    | 19       | 50       |
+| 7    | 7        | 120      |
+| 8    | 19       | 400      |
+| 9    | 7        | 230      |
++------+----------+----------+
+Output: 
++----------+--------------------+
+| name     | travelled_distance |
++----------+--------------------+
+| Elvis    | 450                |
+| Lee      | 450                |
+| Bob      | 317                |
+| Jonathan | 312                |
+| Alex     | 222                |
+| Alice    | 120                |
+| Donald   | 0                  |
++----------+--------------------+
+*/
+
+SELECT
+    Users.name,
+    COALESCE(SUM(distance), 0) AS travelled_distance
+FROM Rides
+FULL JOIN Users
+ON Users.id = Rides.user_id
+WHERE Users.name IS NOT NULL
+GROUP BY 
+    Users.id,
+    Users.name
+ORDER BY 
+    COALESCE(SUM(distance), 0) DESC,
+    Users.name;
+------------------------------------------------------------
+
+--1873. Рассчитать специальный бонус
+https://leetcode.com/problems/calculate-special-bonus/submissions/1159359743/
+
+/*
+Напишите решение для расчета бонуса каждого сотрудника. Бонус сотрудника составляет 100% от его зарплаты, если идентификатор сотрудника является нечетным числом, а имя сотрудника не начинается с символа "M". В противном случае бонус сотрудника равен 0.
+
+Верните таблицу результатов, упорядоченную по employee_id.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Employees table:
++-------------+---------+--------+
+| employee_id | name    | salary |
++-------------+---------+--------+
+| 2           | Meir    | 3000   |
+| 3           | Michael | 3800   |
+| 7           | Addilyn | 7400   |
+| 8           | Juan    | 6100   |
+| 9           | Kannon  | 7700   |
++-------------+---------+--------+
+Output: 
++-------------+-------+
+| employee_id | bonus |
++-------------+-------+
+| 2           | 0     |
+| 3           | 0     |
+| 7           | 7400  |
+| 8           | 0     |
+| 9           | 7700  |
++-------------+-------+
+*/
+
+SELECT
+    employee_id,
+    CASE
+        WHEN employee_id % 2 <> 0 AND LEFT(name, 1) <> 'M' THEN salary
+        ELSE 0
+    END AS bonus
+FROM Employees
+ORDER BY employee_id;
+----------------------------------------------------------------------------
+
+--1280. Студенты и экзамены
+https://leetcode.com/problems/students-and-examinations/submissions/1159378136/
+
+/*
+Напишите решение, чтобы узнать, сколько раз каждый студент посещал каждый экзамен.
+
+Верните таблицу результатов, упорядоченную по student_id и subject_name.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Students table:
++------------+--------------+
+| student_id | student_name |
++------------+--------------+
+| 1          | Alice        |
+| 2          | Bob          |
+| 13         | John         |
+| 6          | Alex         |
++------------+--------------+
+Subjects table:
++--------------+
+| subject_name |
++--------------+
+| Math         |
+| Physics      |
+| Programming  |
++--------------+
+Examinations table:
++------------+--------------+
+| student_id | subject_name |
++------------+--------------+
+| 1          | Math         |
+| 1          | Physics      |
+| 1          | Programming  |
+| 2          | Programming  |
+| 1          | Physics      |
+| 1          | Math         |
+| 13         | Math         |
+| 13         | Programming  |
+| 13         | Physics      |
+| 2          | Math         |
+| 1          | Math         |
++------------+--------------+
+Output: 
++------------+--------------+--------------+----------------+
+| student_id | student_name | subject_name | attended_exams |
++------------+--------------+--------------+----------------+
+| 1          | Alice        | Math         | 3              |
+| 1          | Alice        | Physics      | 2              |
+| 1          | Alice        | Programming  | 1              |
+| 2          | Bob          | Math         | 1              |
+| 2          | Bob          | Physics      | 0              |
+| 2          | Bob          | Programming  | 1              |
+| 6          | Alex         | Math         | 0              |
+| 6          | Alex         | Physics      | 0              |
+| 6          | Alex         | Programming  | 0              |
+| 13         | John         | Math         | 1              |
+| 13         | John         | Physics      | 1              |
+| 13         | John         | Programming  | 1              |
++------------+--------------+--------------+----------------+
+*/
+
+WITH tab1 AS(
+    SELECT
+        *
+    FROM Students
+    CROSS JOIN
+    Subjects
+),
+tab2 AS (
+    SELECT
+        student_id,
+        subject_name,
+        COALESCE(COUNT(*), 0) AS attended_exams
+    FROM Examinations
+    GROUP BY
+        student_id,
+        subject_name
+)
+SELECT
+    tab1.*,
+    COALESCE(tab2.attended_exams, 0) AS attended_exams
+FROM tab1
+LEFT JOIN tab2
+ON tab1.student_id = tab2.student_id AND tab1.subject_name = tab2.subject_name
+ORDER BY tab1.student_id, tab1.subject_name;
+----------------------------------------------------------------------------------------
+
+--1633. Процент пользователей, посетивших конкурс.
+https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/
+
+/*
+Напишите решение, чтобы найти процент пользователей, зарегистрированных в каждом конкурсе, округленный до двух десятичных знаков.
+
+Возвращает таблицу результатов, упорядоченную по процентам в порядке убывания. В случае ничьи, закажите ее по contest_id в порядке возрастания.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Users table:
++---------+-----------+
+| user_id | user_name |
++---------+-----------+
+| 6       | Alice     |
+| 2       | Bob       |
+| 7       | Alex      |
++---------+-----------+
+Register table:
++------------+---------+
+| contest_id | user_id |
++------------+---------+
+| 215        | 6       |
+| 209        | 2       |
+| 208        | 2       |
+| 210        | 6       |
+| 208        | 6       |
+| 209        | 7       |
+| 209        | 6       |
+| 215        | 7       |
+| 208        | 7       |
+| 210        | 2       |
+| 207        | 2       |
+| 210        | 7       |
++------------+---------+
+Output: 
++------------+------------+
+| contest_id | percentage |
++------------+------------+
+| 208        | 100.0      |
+| 209        | 100.0      |
+| 210        | 100.0      |
+| 215        | 66.67      |
+| 207        | 33.33      |
++------------+------------+
+*/
+
+SELECT 
+    r.contest_id,
+    ROUND((COUNT(DISTINCT r.user_id) * 100.0) / total_users.total, 2) AS percentage
+FROM 
+    Register r
+JOIN (
+    SELECT 
+        COUNT(DISTINCT user_id) AS total
+    FROM 
+        Users
+) AS total_users ON TRUE
+GROUP BY 
+    r.contest_id, total_users.total
+ORDER BY 
+    percentage DESC, r.contest_id;
+---------------------------------------------------------------------------------------------
+
+--1211. Качество и процент запросов
+https://leetcode.com/problems/queries-quality-and-percentage/submissions/1159400603/
+
+/*
+Мы определяем качество запроса как:
+
+Среднее соотношение между рейтингом запроса и его позицией.
+
+Мы также определяем плохой процент запросов как:
+
+Процент всех запросов с рейтингом менее 3.
+
+Напишите решение, чтобы найти каждое имя_запроса, качество и плохой процент_запроса.
+
+И качество, и poor_query_percentage должны быть округлены до 2 знаков после запятой.
+
+Верните таблицу результатов в любом порядке.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Queries table:
++------------+-------------------+----------+--------+
+| query_name | result            | position | rating |
++------------+-------------------+----------+--------+
+| Dog        | Golden Retriever  | 1        | 5      |
+| Dog        | German Shepherd   | 2        | 5      |
+| Dog        | Mule              | 200      | 1      |
+| Cat        | Shirazi           | 5        | 2      |
+| Cat        | Siamese           | 3        | 3      |
+| Cat        | Sphynx            | 7        | 4      |
++------------+-------------------+----------+--------+
+Output: 
++------------+---------+-----------------------+
+| query_name | quality | poor_query_percentage |
++------------+---------+-----------------------+
+| Dog        | 2.50    | 33.33                 |
+| Cat        | 0.66    | 33.33                 |
++------------+---------+-----------------------+
+
+Объяснение:
+
+Качество запросов собаки ((5 / 1) + (5 / 2) + (1 / 200)) / 3 = 2,50
+
+Собачьи запросы poor_ query_percentage (1 / 3) * 100 = 33,33
+
+Качество запросов кошки равно ((2 / 5) + (3 / 3) + (4 / 7)) / 3 = 0,66
+
+Кошачьи запросы poor_ query_percentage (1 / 3) * 100 = 33,33
+*/
+
+WITH Quality AS (
+  SELECT 
+    query_name,
+    AVG(rating::NUMERIC / position) AS quality
+  FROM 
+    Queries
+  GROUP BY 
+    query_name
+),
+PoorQuery AS (
+  SELECT 
+    query_name,
+    (COUNT(*) FILTER (WHERE rating < 3)::NUMERIC / COUNT(*)) * 100 AS poor_query_percentage
+  FROM 
+    Queries
+  GROUP BY 
+    query_name
+)
+SELECT 
+  q.query_name,
+  ROUND(q.quality::NUMERIC, 2) AS quality,
+  ROUND(pq.poor_query_percentage::NUMERIC, 2) AS poor_query_percentage
+FROM 
+  Quality q
+JOIN 
+  PoorQuery pq ON q.query_name = pq.query_name;
+-------------------------------------------------------------------------------------------------
+
+--596. Классы более 5 учеников.
+https://leetcode.com/problems/classes-more-than-5-students/submissions/1159405100/
+
+/*
+Напишите решение, чтобы найти все классы, в которых есть не менее пяти учеников.
+
+Верните таблицу результатов в любом порядке.
+
+Формат результата приведен в следующем примере.
+
+Input: 
+Courses table:
++---------+----------+
+| student | class    |
++---------+----------+
+| A       | Math     |
+| B       | English  |
+| C       | Math     |
+| D       | Biology  |
+| E       | Math     |
+| F       | Computer |
+| G       | Math     |
+| H       | Math     |
+| I       | Math     |
++---------+----------+
+Output: 
++---------+
+| class   |
++---------+
+| Math    |
++---------+
+*/
+
+SELECT
+    class
+FROM Courses
+GROUP BY
+    class
+HAVING COUNT(class) >= 5;
+---------------------------------------------------------------
